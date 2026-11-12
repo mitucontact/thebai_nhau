@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<!--
+=====================================================================
+  DRINKING GAME NEON VIP  -  FILE HƯỚNG DẪN CHỈNH SỬA
+=====================================================================
+  File này là 1 trang web duy nhất, gồm 3 phần:
+
+    1. HTML  (phần <body>)    : khung xương, các nút và chữ hiện trên màn hình
+    2. CSS   (phần <style>)   : màu sắc, kích thước, hiệu ứng, bố cục
+    3. JS    (phần <script>)  : "bộ não": rút bài, lật thẻ, âm thanh, lưu tên...
+
+  CÁCH CHỈNH NHANH (tìm bằng Ctrl+F rồi sửa):
+    - Thêm / sửa / xóa thẻ bài ......... tìm  const RAW
+    - Đổi tên, màu, icon, gợi ý loại thẻ  tìm  const CATS
+    - Đổi số giây của đồng hồ .......... tìm  TIMER_SECONDS
+    - Đổi màu chủ đạo của game ......... tìm  :root  (trong phần CSS)
+    - Đổi tiêu đề game ................. tìm  DRINKING (trong phần HTML)
+    - Đổi chữ trên nút ................. tìm  <button  (trong phần HTML)
+
+  MẸO: sửa xong lưu file, mở lại bằng Chrome và nhấn F5 để thấy thay đổi.
+  Nếu lỡ làm hỏng, hãy giữ 1 bản sao của file trước khi sửa.
+=====================================================================
+-->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<!-- Giúp trang hiển thị đúng cỡ trên điện thoại (không bị thu nhỏ) -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<!-- Màu thanh trạng thái của trình duyệt điện thoại -->
+<meta name="theme-color" content="#07050f">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Drinking Game Neon VIP</title>
+
+<!-- Tải 2 phông chữ từ Google: Bungee (tiêu đề), Poppins (chữ thường).
+     Nếu mất mạng thì trình duyệt tự dùng phông dự phòng, game vẫn chạy bình thường. -->
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* =====================================================================
+   PHẦN CSS: quyết định giao diện trông như thế nào
+   ===================================================================== */
+
+/* ---------- BIẾN MÀU & PHÔNG (đổi ở đây là đổi cả game) ----------
+   Mỗi dòng dạng  --ten: giá trị;  là một "biến".
+   Ở bên dưới, mình gọi lại bằng var(--ten).
+   Ví dụ muốn đổi màu hồng neon thành đỏ: sửa --pink:#ff3df2 thành --pink:#ff0000 */
+:root{
+  --bg:#07050f;                         /* màu nền tối */
+  --ink:#f6f2ff;                        /* màu chữ chính */
+  --mute:rgba(246,242,255,.62);         /* màu chữ phụ (mờ hơn) */
+  --glass:rgba(255,255,255,.07);        /* nền "kính mờ" của nút, viên thuốc */
+  --line:rgba(255,255,255,.16);         /* màu viền mảnh */
+  --pink:#ff3df2;                       /* hồng neon */
+  --violet:#7b2cff;                     /* tím */
+  --cyan:#00e5ff;                       /* xanh lơ */
+  --lime:#7cff6b;                       /* xanh lá */
+  --amber:#ffd23f;                      /* vàng */
+  --c:#00e5ff;                          /* màu của THẺ ĐANG HIỆN (JS sẽ tự đổi theo loại thẻ) */
+  --display:'Bungee','Impact',sans-serif;                                /* phông tiêu đề */
+  --body:'Poppins',system-ui,-apple-system,'Segoe UI',sans-serif;        /* phông chữ thường */
+}
+
+/* Báo cho trình duyệt biết đây là giao diện tối (để ô nhập, thanh cuộn cũng tối theo) */
+:root{color-scheme:dark}
+
+/* Xóa khoảng cách mặc định của mọi phần tử để dễ canh chỉnh.
+   box-sizing:border-box = chiều rộng đã gồm cả viền và đệm, dễ tính hơn */
+*{margin:0;padding:0;box-sizing:border-box}
+
+/* Phần tử có thuộc tính hidden thì ẩn hẳn (dùng cho cửa sổ nhập tên, nút bấm giờ) */
+[hidden]{display:none!important}
+
+/* Cho trang cao đủ 100% màn hình */
+html,body{height:100%}
+
+body{
+  font-family:var(--body);
+  color:var(--ink);
+  background:var(--bg);
+  overflow:hidden;                        /* không cho trang cuộn: game luôn vừa 1 màn hình */
+  overscroll-behavior:none;               /* tránh hiệu ứng "kéo giãn" khi vuốt trên điện thoại */
+  touch-action:manipulation;              /* tắt chạm đúp để phóng to */
+  -webkit-user-select:none;user-select:none;   /* không cho bôi đen chữ khi đang chơi */
+  -webkit-touch-callout:none;             /* tắt menu giữ lâu trên iPhone */
+  -webkit-tap-highlight-color:transparent;     /* tắt ô sáng xám khi chạm */
+}
+/* Riêng ô nhập tên thì vẫn cho bôi đen chữ bình thường */
+input{-webkit-user-select:text;user-select:text}
+
+
+/* ---------- NỀN NEON ----------
+   .bg là một lớp nằm sau cùng, gồm:
+   - ::before : các vùng sáng hồng / xanh / tím mờ
+   - ::after  : mặt sàn lưới kiểu synthwave
+   - 3 thẻ <i>: 3 quả cầu sáng trôi nhẹ */
+.bg{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.bg::before{
+  content:"";position:absolute;inset:0;
+  background:
+    radial-gradient(60% 45% at 20% 10%,rgba(255,61,242,.28),transparent 70%),
+    radial-gradient(55% 45% at 85% 20%,rgba(0,229,255,.22),transparent 70%),
+    radial-gradient(70% 50% at 50% 110%,rgba(123,44,255,.45),transparent 70%);
+}
+.bg::after{
+  content:"";position:absolute;left:-50%;right:-50%;bottom:-10%;height:55%;
+  /* 2 lớp đường kẻ (dọc + ngang) tạo thành ô lưới */
+  background:
+    repeating-linear-gradient(90deg,rgba(255,61,242,.35) 0 1px,transparent 1px 70px),
+    repeating-linear-gradient(0deg,rgba(0,229,255,.3) 0 1px,transparent 1px 50px);
+  transform:perspective(380px) rotateX(62deg);   /* nghiêng lưới ra xa như mặt sàn */
+  transform-origin:50% 100%;
+  /* làm lưới mờ dần về phía xa */
+  mask-image:linear-gradient(to top,#000 10%,transparent 85%);
+  -webkit-mask-image:linear-gradient(to top,#000 10%,transparent 85%);
+  animation:grid 3s linear infinite;             /* lưới chạy liên tục */
+}
+@keyframes grid{to{background-position:0 50px,70px 0}}
+
+/* 3 quả cầu sáng: mỗi quả một màu, một vị trí */
+.bg i{
+  position:absolute;border-radius:50%;filter:blur(50px);opacity:.4;will-change:transform;
+  animation:float 14s ease-in-out infinite;
+}
+.bg i:nth-child(1){width:260px;height:260px;background:var(--pink);left:-60px;top:30%}
+.bg i:nth-child(2){width:300px;height:300px;background:var(--cyan);right:-90px;top:8%;animation-delay:-5s}
+.bg i:nth-child(3){width:240px;height:240px;background:var(--violet);left:40%;bottom:5%;animation-delay:-9s}
+@keyframes float{50%{transform:translate(30px,-40px) scale(1.15)}}
+
+/* Lớp vẽ pháo hoa: phủ toàn màn hình nhưng không chặn chạm (pointer-events:none) */
+#fx{position:fixed;inset:0;width:100%;height:100%;z-index:50;pointer-events:none}
+
+
+/* ---------- BỐ CỤC CHÍNH ----------
+   .app xếp các khối theo chiều dọc: đầu trang -> thẻ bài -> các nút -> dòng chú thích */
+.app{
+  position:relative;z-index:1;
+  height:100%;
+  max-width:520px;margin:0 auto;            /* tối đa 520px, tự canh giữa trên máy tính */
+  display:flex;flex-direction:column;align-items:center;gap:10px;
+  /* env(safe-area-inset-...) = chừa chỗ cho tai thỏ / thanh điều hướng của điện thoại */
+  padding-block:max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-bottom));
+  padding-left:max(16px,env(safe-area-inset-left));
+  padding-right:max(16px,env(safe-area-inset-right));
+}
+/* Khối đầu trang: tiêu đề, trạng thái, thanh tiến độ, bộ lọc */
+.top{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%;flex:0 0 auto}
+
+/* Tiêu đề có chữ phát sáng neon (text-shadow nhiều lớp tạo vầng sáng) */
+h1{
+  font-family:var(--display);
+  font-weight:400;
+  font-size:clamp(26px,7vw,40px);          /* cỡ chữ tự co giãn theo độ rộng màn hình */
+  letter-spacing:.02em;
+  text-align:center;
+  line-height:1.05;
+  color:#fff;
+  text-shadow:0 0 8px var(--pink),0 0 22px var(--pink),0 0 48px var(--violet);
+}
+h1 b{font-weight:400;color:#fff;text-shadow:0 0 8px var(--cyan),0 0 22px var(--cyan),0 0 48px var(--cyan)}
+
+/* Hàng chứa 2 "viên thuốc": lượt chơi + số thẻ còn lại */
+.status{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;width:100%}
+.pill{
+  font-size:13px;padding:7px 14px;border-radius:99px;
+  background:var(--glass);border:1px solid var(--line);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);   /* hiệu ứng kính mờ */
+  color:var(--ink);font-family:var(--body);cursor:default;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+button.pill{cursor:pointer}
+.pill b{color:var(--cyan);font-variant-numeric:tabular-nums}   /* số còn lại màu xanh lơ */
+#turn b{color:var(--amber)}                                    /* tên người đến lượt màu vàng */
+
+/* Thanh tiến độ: JS thay đổi độ rộng của thanh bên trong (#barFill) */
+.bar{width:100%;height:5px;border-radius:9px;background:rgba(255,255,255,.1);overflow:hidden}
+.bar i{display:block;height:100%;width:0;border-radius:9px;
+  background:linear-gradient(90deg,var(--pink),var(--cyan));
+  box-shadow:0 0 12px var(--pink);transition:width .5s}
+
+/* Hàng nút lọc loại thẻ: 1 hàng, vuốt ngang được nếu không đủ chỗ */
+.filters{
+  display:flex;gap:8px;width:100%;
+  overflow-x:auto;scrollbar-width:none;padding:2px 0 4px;
+  justify-content:safe center;
+}
+.filters::-webkit-scrollbar{display:none}   /* ẩn thanh cuộn ngang */
+.filters .chip{flex:0 0 auto}
+
+/* "chip" = nút nhỏ bo tròn. Mỗi chip có biến --c riêng (JS gán theo màu loại thẻ) */
+.chip{
+  --c:#fff;
+  border:1px solid color-mix(in srgb,var(--c) 55%,transparent);
+  background:color-mix(in srgb,var(--c) 14%,transparent);
+  color:var(--ink);padding:6px 12px;border-radius:99px;
+  font:600 12.5px var(--body);cursor:pointer;transition:.2s;
+}
+.chip.off{opacity:.38;background:transparent;border-color:var(--line);filter:grayscale(.7)}  /* chip đang TẮT thì mờ đi */
+/* Viền xanh khi điều hướng bằng bàn phím (giúp người dùng biết đang chọn cái nào) */
+.chip:focus-visible,button:focus-visible,.card:focus-visible,input:focus-visible{outline:2px solid var(--cyan);outline-offset:3px}
+
+
+/* ---------- THẺ BÀI ----------
+   Cấu trúc:  .scene (khung 3D)  >  .card (thẻ xoay)  >  .front (mặt trước) + .back (mặt sau)
+   Khi thêm class "flipped", thẻ xoay 180 độ để lộ mặt sau (chứa câu hỏi). */
+.scene{
+  width:100%;
+  flex:1 1 0;min-height:0;max-height:560px;   /* thẻ chiếm hết chỗ còn trống, tối đa 560px */
+  perspective:1600px;                          /* tạo chiều sâu 3D khi lật */
+}
+.card{
+  width:100%;height:100%;position:relative;
+  transform-style:preserve-3d;
+  transition:transform .7s cubic-bezier(.4,.1,.2,1);   /* tốc độ lật: .7 giây */
+  cursor:pointer;
+}
+.card.flipped{transform:rotateY(180deg)}
+.card.pulse{animation:pulse .6s}                /* chớp sáng khi xáo bài */
+@keyframes pulse{40%{filter:brightness(1.5)}}
+
+/* Phần dùng chung cho cả 2 mặt thẻ */
+.face{
+  position:absolute;inset:0;
+  -webkit-backface-visibility:hidden;backface-visibility:hidden;   /* ẩn mặt sau khi đang quay lưng lại */
+  border-radius:26px;overflow:hidden;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:22px 20px;text-align:center;gap:12px;
+}
+
+/* MẶT TRƯỚC (lúc chưa rút): thẻ neon nền tối, viền hồng, khung chữ nhật cắt góc và biểu tượng ly ở giữa.
+   Hình vẽ nằm trong HTML (các thẻ <svg>), phần này chỉ lo nền, viền, ánh sáng và vị trí. */
+.front{
+  background:radial-gradient(70% 50% at 50% 45%,#1d0b38,#05030d 78%);
+  border:3px solid #ff3df2;                       /* viền ngoài màu hồng neon */
+  box-shadow:
+    0 0 18px #ff3df2,                             /* vầng sáng hồng sát viền */
+    0 0 50px rgba(255,61,242,.55),                /* vầng sáng hồng xa hơn */
+    0 0 90px rgba(61,123,255,.35),                /* vầng sáng xanh dương ngoài cùng */
+    inset 0 0 22px rgba(255,61,242,.45);          /* ánh sáng bên trong viền */
+}
+/* Vệt sáng quét ngang qua thẻ (rất nhẹ, muốn tắt thì xóa khối .front::after này) */
+.front::after{
+  content:"";position:absolute;top:-60%;left:-60%;width:60%;height:220%;pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.14),transparent);
+  transform:rotate(20deg);animation:sheen 3.6s ease-in-out infinite;
+}
+@keyframes sheen{0%{left:-70%}60%,100%{left:130%}}
+
+/* Khung viền cắt góc: SVG phủ kín mặt thẻ và tự co giãn theo kích thước thẻ */
+.front .frame{
+  position:absolute;inset:0;width:100%;height:100%;
+  filter:drop-shadow(0 0 4px rgba(255,61,242,.9));
+}
+.front .frame path{fill:none;stroke-linecap:round;stroke-linejoin:round;vector-effect:non-scaling-stroke}
+.front .frame .f1{stroke:url(#gFrame1);stroke-width:2.5}   /* khung ngoài: hồng sang xanh dương */
+.front .frame .f2{stroke:url(#gFrame2);stroke-width:2}     /* khung trong: hồng sang tím */
+
+/* 4 ngôi sao nhỏ ở giữa 4 cạnh (vị trí tính theo % của thẻ, trùng với chỗ hở của khung) */
+.front .star{
+  position:absolute;width:24px;height:24px;transform:translate(-50%,-50%);
+  fill:#05030d;stroke:#ff3df2;stroke-width:1.6;stroke-linejoin:round;
+  filter:drop-shadow(0 0 5px #ff3df2);
+}
+.front .s-top{left:50%;top:7%}
+.front .s-bottom{left:50%;top:93%}
+.front .s-left{left:9%;top:50%}
+.front .s-right{left:91%;top:50%}
+
+/* Biểu tượng ly ở giữa: tia sáng xoay chậm, vầng sáng nhấp nháy nhẹ */
+.front .emblem{
+  position:relative;width:min(66%,250px);height:auto;aspect-ratio:1;
+  filter:drop-shadow(0 0 7px rgba(255,61,242,.85));
+  animation:glow 2.6s ease-in-out infinite;
+}
+@keyframes glow{50%{filter:drop-shadow(0 0 16px rgba(255,61,242,1))}}
+.front .rays{transform-box:view-box;transform-origin:center;animation:spin 30s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Dòng nhắc nhỏ phía dưới biểu tượng */
+.front .cue{
+  position:absolute;left:0;right:0;bottom:15%;text-align:center;
+  font:600 11px var(--body);letter-spacing:.28em;text-transform:uppercase;
+  color:rgba(255,160,250,.8);
+}
+
+/* MẶT SAU (chứa nội dung thẻ): viền và ánh sáng lấy theo biến --c (màu loại thẻ) */
+.back{
+  transform:rotateY(180deg);       /* xoay sẵn 180 độ để khi thẻ lật thì nhìn thấy đúng chiều */
+  background:
+    radial-gradient(90% 60% at 50% 0%,color-mix(in srgb,var(--c) 26%,transparent),transparent 70%),
+    rgba(12,10,24,.94);
+  border:2px solid var(--c);
+  box-shadow:0 0 22px var(--c),0 0 70px color-mix(in srgb,var(--c) 45%,transparent),inset 0 0 30px color-mix(in srgb,var(--c) 18%,transparent);
+  transition:box-shadow .4s,border-color .4s;
+  justify-content:safe center;overflow-y:auto;     /* câu dài quá thì cuộn trong thẻ */
+}
+.tag{                              /* nhãn loại thẻ, ví dụ "THẬT LÒNG" */
+  font:700 12px var(--body);letter-spacing:.2em;text-transform:uppercase;
+  color:var(--c);padding:6px 14px;border-radius:99px;
+  border:1px solid var(--c);background:color-mix(in srgb,var(--c) 14%,transparent);
+  text-shadow:0 0 10px var(--c);
+}
+.who{font-size:14px;color:var(--mute)}            /* dòng "Dành cho ..." */
+.who b{color:var(--amber);font-weight:700}
+.icon{font-size:48px;line-height:1;filter:drop-shadow(0 0 14px var(--c))}   /* icon lớn của loại thẻ */
+.question{                         /* nội dung câu hỏi / thử thách */
+  font-size:clamp(19px,5.4vw,25px);line-height:1.5;font-weight:600;color:#fff;
+  text-wrap:balance;overflow-wrap:anywhere;
+}
+.hint{font-size:13px;color:var(--mute);max-width:30ch;line-height:1.5}       /* dòng gợi ý luật chơi */
+
+/* Nút bấm giờ trên thẻ. Có 3 trạng thái: bình thường / .run (đang đếm) / .end (hết giờ) */
+.timer{
+  border:1px solid var(--line);background:var(--glass);color:var(--ink);
+  padding:11px 18px;min-height:44px;flex:0 0 auto;
+  border-radius:99px;font:600 14px var(--body);cursor:pointer;
+  font-variant-numeric:tabular-nums;min-width:120px;
+}
+.timer.run{border-color:var(--c);color:var(--c)}
+.timer.end{background:#ff2e63;border-color:#ff2e63;color:#fff;animation:shake .4s 3}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+
+/* ---------- CÁC NÚT BẤM DƯỚI CÙNG ---------- */
+.controls{display:flex;flex-direction:column;gap:8px;width:100%;flex:0 0 auto}
+.tools{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}   /* 4 nút phụ chia đều 4 cột */
+button{font-family:var(--body)}
+.btn{
+  border:none;border-radius:40px;
+  font-size:15px;font-weight:700;cursor:pointer;transition:transform .2s;color:#fff;
+}
+.btn:active{transform:scale(.96)}          /* nhấn xuống thì nút nhỏ lại một chút */
+.draw-btn{                                  /* nút RÚT THẺ to màu hồng - tím */
+  width:100%;min-height:58px;font-size:19px;
+  background:linear-gradient(90deg,#ff00cc,#7b2cff);
+  box-shadow:0 0 22px rgba(255,0,204,.8);letter-spacing:.04em;
+}
+.sec{                                       /* 4 nút phụ: icon ở trên, chữ ở dưới */
+  min-height:56px;padding:6px 2px;border-radius:18px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  font-size:11.5px;font-weight:600;line-height:1.2;
+  background:var(--glass);border:1px solid var(--line);
+}
+.sec .ic{font-size:21px;line-height:1}
+.sec.on{border-color:var(--lime);box-shadow:0 0 14px rgba(124,255,107,.5)}   /* nút đang BẬT thì viền xanh lá */
+.foot{font-size:11px;color:var(--mute);text-align:center;line-height:1.4;flex:0 0 auto}
+
+/* @media (hover:hover) = chỉ áp dụng cho máy có chuột (máy tính) */
+@media (hover:hover){.btn:hover{transform:translateY(-2px)}.chip:hover{transform:translateY(-1px)}}
+/* @media (hover:none) = máy cảm ứng (điện thoại): ẩn câu hướng dẫn phím tắt vì không có bàn phím */
+@media (hover:none){.kbd{display:none}}
+
+
+/* ---------- CỬA SỔ NHẬP TÊN NGƯỜI CHƠI ---------- */
+.modal{                                     /* lớp phủ tối toàn màn hình */
+  position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;
+  padding:20px;background:rgba(3,2,10,.78);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+}
+.sheet{                                     /* hộp nội dung ở giữa */
+  width:min(100%,420px);max-height:90dvh;overflow:auto;
+  background:#120d26;border:1px solid var(--line);border-radius:22px;padding:22px;
+  box-shadow:0 0 40px rgba(123,44,255,.5);display:flex;flex-direction:column;gap:14px;
+}
+.sheet h2{font-family:var(--display);font-weight:400;font-size:22px;color:#fff;text-shadow:0 0 14px var(--pink)}
+.sheet p{font-size:13px;color:var(--mute);line-height:1.5}
+.row{display:flex;gap:8px}
+.row input{                                 /* ô nhập tên (cỡ chữ 16px để iPhone không tự phóng to) */
+  flex:1;min-width:0;padding:12px 16px;border-radius:30px;border:1px solid var(--line);
+  background:rgba(255,255,255,.06);color:#fff;font:16px var(--body);min-height:46px;
+}
+.add{background:linear-gradient(90deg,var(--cyan),var(--lime));color:#05121a;padding:0 20px}
+.players{display:flex;flex-wrap:wrap;gap:8px;min-height:34px}
+.players .chip{--c:var(--cyan);display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px}
+.players .x{background:none;border:none;color:var(--ink);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;min-width:28px;min-height:28px}
+.empty{font-size:13px;color:var(--mute)}
+
+
+/* ---------- RESPONSIVE: tự thích ứng với từng cỡ màn hình ---------- */
+
+/* Màn hình thấp (điện thoại nhỏ): thu gọn chữ, khoảng cách và ẩn dòng chú thích cho vừa 1 trang */
+@media (max-height:700px){
+  h1{font-size:24px}
+  .pill{padding:5px 12px;font-size:12px}
+  .icon{font-size:36px}
+  .face{gap:9px}
+  .draw-btn{min-height:52px;font-size:17px}
+  .sec{min-height:50px}
+  .foot{display:none}
+}
+/* Màn hình rất thấp: bỏ thêm thanh tiến độ và dòng gợi ý */
+@media (max-height:600px){.bar{display:none}.hint{display:none}}
+
+/* Xoay ngang điện thoại: chia 2 cột (trái: tiêu đề + nút, phải: thẻ bài) */
+@media (orientation:landscape) and (max-height:520px){
+  .app{
+    max-width:900px;display:grid;
+    grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);
+    grid-template-rows:auto 1fr;gap:10px 18px;align-items:stretch;
+  }
+  .top{grid-column:1;grid-row:1;gap:6px}
+  .controls{grid-column:1;grid-row:2;align-self:end}
+  .scene{grid-column:2;grid-row:1 / span 2;max-height:none}
+  .filters{flex-wrap:wrap;overflow:visible;justify-content:center}
+  .foot{display:none}
+  h1{font-size:22px}
+  .question{font-size:clamp(17px,3.2vw,22px)}
+  .hint{display:block}
+}
+
+/* Người dùng bật "giảm chuyển động" trong máy thì tắt hết hiệu ứng */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+
+<body>
+
+<!-- =====================================================================
+     PHẦN HTML: khung xương của trang (những gì hiện ra trên màn hình)
+     Mỗi phần tử có "id" để phần JS bên dưới tìm và điều khiển nó.
+     ===================================================================== -->
+
+<!-- Nền neon (3 thẻ <i> là 3 quả cầu sáng, hình vẽ nằm trong CSS) -->
+<div class="bg"><i></i><i></i><i></i></div>
+
+<!-- Tấm vải để vẽ pháo hoa (phần JS sẽ vẽ lên đây) -->
+<canvas id="fx"></canvas>
+
+<main class="app">
+
+  <!-- ĐẦU TRANG: tiêu đề, trạng thái, thanh tiến độ, bộ lọc -->
+  <header class="top">
+    <h1>🍻 DRINKING <b>GAME</b></h1>   <!-- muốn đổi tên game thì sửa chữ ở đây -->
+
+    <div class="status">
+      <!-- Nút hiện "Đến lượt: tên" - bấm vào để mở cửa sổ nhập tên (nội dung do JS điền) -->
+      <button class="pill" id="turn" type="button"></button>
+      <!-- Số thẻ còn lại trong bộ bài (số do JS điền vào #remaining) -->
+      <span class="pill">Còn lại <b id="remaining">0</b> thẻ</span>
+    </div>
+
+    <!-- Thanh tiến độ bộ bài (độ dài do JS điều khiển) -->
+    <div class="bar"><i id="barFill"></i></div>
+
+    <!-- Các nút lọc loại thẻ (JS tự tạo từ danh sách CATS) -->
+    <div class="filters" id="filters" aria-label="Lọc loại thẻ"></div>
+  </header>
+
+  <!-- THẺ BÀI -->
+  <section class="scene">
+    <div class="card" id="card" role="button" tabindex="0" aria-label="Rút thẻ">
+
+      <!-- Mặt trước: hiện lúc chưa rút (thẻ neon vẽ bằng SVG, không cần file ảnh) -->
+      <div class="face front">
+
+        <!-- Khung viền cắt góc. Tọa độ 0-100 co giãn theo thẻ.
+             Mỗi đường M...L... có chỗ hở ở giữa mỗi cạnh để đặt ngôi sao. -->
+        <svg class="frame" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <defs>
+            <linearGradient id="gFrame1" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ff3df2"/><stop offset=".55" stop-color="#b04cff"/><stop offset="1" stop-color="#2b8cff"/>
+            </linearGradient>
+            <linearGradient id="gFrame2" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0" stop-color="#ff3df2"/><stop offset="1" stop-color="#c13dff"/>
+            </linearGradient>
+            <!-- Hình ngôi sao 4 cánh, dùng lại 4 lần bên dưới -->
+            <symbol id="star4" viewBox="0 0 24 24"><path d="M12 1.5 L14.6 9.4 L22.5 12 L14.6 14.6 L12 22.5 L9.4 14.6 L1.5 12 L9.4 9.4 Z"/></symbol>
+          </defs>
+          <!-- Khung ngoài -->
+          <path class="f1" d="M40 7 L14 7 L9 10.5 L9 41"/>
+          <path class="f1" d="M9 59 L9 89.5 L14 93 L40 93"/>
+          <path class="f1" d="M60 93 L86 93 L91 89.5 L91 59"/>
+          <path class="f1" d="M91 41 L91 10.5 L86 7 L60 7"/>
+          <!-- Khung trong -->
+          <path class="f2" d="M38 12 L20 12 L15 15.5 L15 40"/>
+          <path class="f2" d="M15 60 L15 84.5 L20 88 L38 88"/>
+          <path class="f2" d="M62 88 L80 88 L85 84.5 L85 60"/>
+          <path class="f2" d="M85 40 L85 15.5 L80 12 L62 12"/>
+        </svg>
+
+        <!-- 4 ngôi sao ở giữa 4 cạnh -->
+        <svg class="star s-top" aria-hidden="true"><use href="#star4"/></svg>
+        <svg class="star s-bottom" aria-hidden="true"><use href="#star4"/></svg>
+        <svg class="star s-left" aria-hidden="true"><use href="#star4"/></svg>
+        <svg class="star s-right" aria-hidden="true"><use href="#star4"/></svg>
+
+        <!-- Biểu tượng chính giữa: tia sáng + vòng tròn + ly -->
+        <svg class="emblem" viewBox="0 0 260 260" aria-hidden="true">
+          <defs>
+            <linearGradient id="gCup" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#ff3df2"/><stop offset="1" stop-color="#3d7bff"/>
+            </linearGradient>
+          </defs>
+          <!-- 12 tia sáng quanh vòng tròn (đổi màu ở thuộc tính stroke) -->
+          <g class="rays" stroke-width="4.5" stroke-linecap="round">
+          <line x1="130.0" y1="42.0" x2="130.0" y2="22.0" stroke="#ffa31a"/>
+          <line x1="174.0" y1="53.8" x2="180.0" y2="43.4" stroke="#2b8cff"/>
+          <line x1="206.2" y1="86.0" x2="223.5" y2="76.0" stroke="#ff3df2"/>
+          <line x1="218.0" y1="130.0" x2="230.0" y2="130.0" stroke="#ff3df2"/>
+          <line x1="206.2" y1="174.0" x2="223.5" y2="184.0" stroke="#ffa31a"/>
+          <line x1="174.0" y1="206.2" x2="180.0" y2="216.6" stroke="#2b8cff"/>
+          <line x1="130.0" y1="218.0" x2="130.0" y2="238.0" stroke="#ff3df2"/>
+          <line x1="86.0" y1="206.2" x2="80.0" y2="216.6" stroke="#ff3df2"/>
+          <line x1="53.8" y1="174.0" x2="36.5" y2="184.0" stroke="#ffa31a"/>
+          <line x1="42.0" y1="130.0" x2="30.0" y2="130.0" stroke="#2b8cff"/>
+          <line x1="53.8" y1="86.0" x2="36.5" y2="76.0" stroke="#ff3df2"/>
+          <line x1="86.0" y1="53.8" x2="80.0" y2="43.4" stroke="#ff3df2"/>
+          </g>
+          <!-- Các vòng tròn: đứt đoạn nhờ stroke-dasharray -->
+          <circle cx="130" cy="130" r="74" fill="none" stroke="#2b8cff" stroke-width="3.5" stroke-dasharray="150 60" transform="rotate(-50 130 130)"/>
+          <circle cx="130" cy="130" r="66" fill="none" stroke="#ff3df2" stroke-width="3.5" stroke-dasharray="270 30" transform="rotate(20 130 130)"/>
+          <circle cx="130" cy="130" r="56" fill="rgba(255,61,242,.07)" stroke="#ff3df2" stroke-width="2.5"/>
+          <!-- Chiếc ly: miệng ly (elip), thân ly và 2 đường trang trí -->
+          <path d="M102 104 L110 160 Q111 167 118 167 L142 167 Q149 167 150 160 L158 104" fill="rgba(5,3,13,.55)" stroke="url(#gCup)" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"/>
+          <ellipse cx="130" cy="104" rx="28" ry="7" fill="none" stroke="url(#gCup)" stroke-width="4"/>
+          <path d="M107 124 Q130 131 153 124" fill="none" stroke="#ff3df2" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+          <path d="M111 146 L149 146" fill="none" stroke="#3d7bff" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
+        </svg>
+
+        <small class="cue">Chạm để rút</small>
+      </div>
+
+      <!-- Mặt sau: hiện nội dung thẻ. Các ô trống bên dưới do JS điền khi rút bài -->
+      <div class="face back">
+        <div class="tag" id="tag"></div>            <!-- tên loại thẻ -->
+        <div class="who" id="who"></div>            <!-- "Dành cho ..." -->
+        <div class="icon" id="icon"></div>          <!-- icon loại thẻ -->
+        <div class="question" id="question"></div>  <!-- nội dung câu hỏi -->
+        <div class="hint" id="hint"></div>          <!-- gợi ý luật chơi -->
+        <button class="timer" id="timer" type="button">⏱ Bấm giờ</button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CÁC NÚT ĐIỀU KHIỂN -->
+  <div class="controls">
+    <!-- Nút rút thẻ chính -->
+    <button class="btn draw-btn" id="drawBtn" type="button">🎴 RÚT THẺ</button>
+
+    <!-- 4 nút phụ -->
+    <div class="tools">
+      <button class="btn sec" id="shuffleBtn" type="button"><span class="ic">🔀</span>Xáo bài</button>
+      <button class="btn sec" id="playersBtn" type="button"><span class="ic">👥</span>Người chơi</button>
+      <button class="btn sec" id="musicBtn" type="button"><span class="ic">🎵</span>Nhạc</button>
+      <button class="btn sec on" id="sfxBtn" type="button"><span class="ic">🔊</span>Tiếng</button>
+    </div>
+  </div>
+
+  <!-- Dòng chú thích nhỏ dưới cùng (class "kbd" = chỉ hiện trên máy tính) -->
+  <p class="foot"><span class="kbd">Phím cách hoặc Enter để rút nhanh. </span>Vuốt thẻ lên để rút. Uống có chừng mực, đã uống thì không lái xe.</p>
+</main>
+
+<!-- CỬA SỔ NHẬP TÊN NGƯỜI CHƠI (đang ẩn, JS sẽ mở ra khi bấm nút "Người chơi") -->
+<div class="modal" id="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <h2 id="mTitle">👥 Người chơi</h2>
+    <p>Thêm tên mọi người để game chia lượt và gọi tên khi rút thẻ. Có thể bỏ trống.</p>
+    <form class="row" id="addForm">
+      <input id="nameInput" type="text" maxlength="16" placeholder="Nhập tên rồi Enter" autocomplete="off">
+      <button class="btn add" type="submit">Thêm</button>
+    </form>
+    <!-- Danh sách tên đã thêm (JS điền vào) -->
+    <div class="players" id="playerList"></div>
+    <button class="btn draw-btn" id="closeModal" type="button">Xong, chơi thôi</button>
+  </div>
+</div>
+
+
+<script>
+/* =====================================================================
+   PHẦN JAVASCRIPT: "bộ não" của game
+   Đọc từ trên xuống dưới, mỗi khối có tiêu đề riêng:
+     1. Cài đặt nhanh        (số giây đồng hồ)
+     2. Loại thẻ + nội dung thẻ
+     3. Biến trạng thái
+     4. Âm thanh
+     5. Pháo hoa
+     6. Bộ bài (xáo, rút)
+     7. Đồng hồ bấm giờ
+     8. Bộ lọc loại thẻ
+     9. Người chơi
+    10. Sự kiện (bấm, vuốt, phím)
+    11. Khởi động
+   ===================================================================== */
+
+
+/* =============== 1. CÀI ĐẶT NHANH =============== */
+const TIMER_SECONDS = 10;   // Số giây của đồng hồ bấm giờ trên thẻ. Muốn 20 giây thì đổi thành 20.
+const SHOW_FILTERS  = true; // false = ẩn hàng nút lọc loại thẻ (trộn tất cả thẻ). true = hiện lại để bật/tắt từng loại.
+
+
+/* =============== 2. LOẠI THẺ & NỘI DUNG THẺ =============== */
+
+/* CATS = danh sách các LOẠI thẻ.
+   Mỗi loại có: tên hiển thị, icon, màu neon, và câu gợi ý luật.
+   Từ khóa bên trái (truth, vote, dare, game, drink) là "mã" của loại thẻ,
+   dùng để gắn vào từng thẻ ở bảng RAW bên dưới.
+   Muốn thêm loại mới: copy 1 dòng, đặt mã mới (viết thường, không dấu), đổi tên và màu. */
+const CATS = {
+  truth:{name:"Thật lòng", icon:"💬", color:"#00e5ff", hint:"Trả lời thật. Không muốn trả lời thì uống 1 ly."},
+  vote: {name:"Bình chọn", icon:"👉", color:"#ff3df2", hint:"Đếm 3-2-1 rồi cùng chỉ tay. Ai bị chỉ nhiều nhất uống."},
+  dare: {name:"Thử thách", icon:"🔥", color:"#ff9f1c", hint:"Làm cho trọn. Từ chối thì uống 1 ly."},
+  game: {name:"Trò chơi",  icon:"🎲", color:"#7cff6b", hint:"Ai sai hoặc chậm nhất thì uống."},
+  drink:{name:"Cạn ly",    icon:"🍺", color:"#ffd23f", hint:"Luật là luật. Cạn ly thôi!"}
+};
+
+/* RAW = TOÀN BỘ THẺ BÀI.
+   Mỗi thẻ là 1 dòng theo mẫu:   ["mã loại","Nội dung thẻ"],
+   LƯU Ý:
+     - Nội dung nằm trong dấu ngoặc kép " "
+     - Cuối mỗi dòng có dấu phẩy ,  (riêng dòng CUỐI CÙNG thì không có dấu phẩy)
+     - Mã loại phải trùng với 1 mã trong CATS ở trên (truth, vote, dare, game, drink)
+   Muốn thêm thẻ: copy 1 dòng, dán xuống dưới, sửa lại nội dung.
+   Muốn xóa thẻ: xóa nguyên dòng đó.
+   Muốn đổi loại của thẻ: sửa chữ đầu tiên. */
+const RAW = [
+ ["truth","Kể 1 lần bạn nói dối mà không ai biết."],
+ ["vote","Nếu phải chọn trong bàn nhậu, bạn chọn ai để tư vấn tình cảm cho bạn?"],
+ ["vote","Giả sử trong 1 bộ phim, nếu bạn là chính diện thì bạn sẽ không muốn ai là phản diện?"],
+ ["vote","Ai là người dễ bị trap tình cảm nhất?"],
+ ["truth","Bạn từng ghost ai chưa? Vì sao?"],
+ ["truth","Ước mơ hiện tại của bạn là gì?"],
+ ["truth","Hãy kể lần gần nhất bạn khóc? Tại sao?"],
+ ["vote","Trong bàn này, ai là người bạn tin tưởng nhất? Vì sao?"],
+ ["truth","Lần gần nhất bạn quê là khi nào?"],
+ ["truth","Điều bạn hối hận nhất trong 1 năm qua?"],
+ ["vote","Ai là người diễn sâu nhất nhóm?"],
+ ["truth","Bạn từng bị từ chối tình cảm chưa? Chuyện gì đã xảy ra?"],
+ ["truth","Bạn từng từ chối tình cảm ai đó chưa? Chuyện gì đã xảy ra?"],
+ ["vote","Ai là người đáng tin nhất khi giữ bí mật? Tại sao?"],
+ ["truth","Bạn từng làm điều gì hèn nhất?"],
+ ["vote","Ai là người bạn nghĩ có quá khứ dữ dội nhất? Vì sao?"],
+ ["vote","Giả sử các bạn làm việc cùng nhau, bạn nghĩ ai là người hợp làm leader nhất?"],
+ ["vote","Ai là người dễ say nhất nhóm?"],
+ ["vote","Bạn muốn thấy ai xỉn nhất nhóm?"],
+ ["vote","Ai có tửu lượng cao nhất nhóm?"],
+ ["vote","Ai là người sống tình cảm nhất?"],
+ ["vote","Nếu phải đối mặt với vấn đề tâm lý, bạn chọn ai để xin lời khuyên?"],
+ ["vote","Giả sử bạn gặp tai nạn, ai là người bạn tìm đầu tiên trong bàn nhậu?"],
+ ["vote","Chọn 1 người đưa ra quyết định quan trọng thay cho bạn?"],
+ ["truth","Bạn hãy kể 1 điều trong cuộc sống khiến bạn khó hiểu tới hiện tại?"],
+ ["truth","Món quà bạn muốn được tặng ở hiện tại là gì?"],
+ ["truth","Bạn nghĩ bạn khó tính trong việc gì? Tại sao?"],
+ ["truth","Hãy kể 1 điều mọi người chưa biết về bạn?"],
+ ["dare","Miêu tả 1 người trong bàn bằng hành động để mọi người đoán."],
+ ["dare","Nhảy một điệu bất kỳ ngay tại chỗ."],
+ ["dare","Khen từng người trong bàn, mỗi người 1 câu."],
+ ["truth","Tự nêu 3 điểm xấu của bản thân."],
+ ["dare","Đặt biệt danh mới cho tất cả mọi người."],
+ ["dare","Tự PR bản thân như đang phỏng vấn xin việc."],
+ ["dare","Thách đấu 1 game nhỏ với mọi người. Thắng: mọi người uống. Thua: bạn uống 2 ly."],
+ ["truth","Hãy kể 1 thói quen tích cực và 1 thói quen tiêu cực mới xuất hiện gần đây."],
+ ["truth","Điều vui nhất mà 1 người trong nhóm làm với bạn là gì?"],
+ ["truth","Bạn hãy nói ra 1 điều bạn muốn đính chính về bạn."],
+ ["dare","Đại diện cho giới tính của bạn và đặt 1 câu hỏi cho giới tính còn lại."],
+ ["truth","Lần gần nhất bạn khen người bên phải là khi nào?"],
+ ["dare","Người đối diện nhắm mắt lại, hãy nói 3 điều họ nghĩ về bạn."],
+ ["truth","Bạn nghĩ bạn cần đính chính điều gì với mọi người?"],
+ ["truth","Bạn có muốn thay đổi điều gì ở bản thân không?"],
+ ["truth","Điều khiến bạn khó chịu gần đây là gì?"],
+ ["truth","Bạn nghĩ phiên bản trước đây của bạn sẽ không tin điều gì ở hiện tại?"],
+ ["truth","Hãy kể về lần hạnh phúc gần đây nhất."],
+ ["truth","Bạn đang cố gắng tìm đáp án cho câu hỏi nào trong cuộc sống?"],
+ ["truth","Bài học nào khiến bạn mất nhiều thời gian nhất ở hiện tại?"],
+ ["truth","Bạn muốn thay đổi quá khứ hay biết trước tương lai?"],
+ ["truth","Bạn muốn bạn chọn nghề hay nghề chọn bạn?"],
+ ["dare","Miêu tả một bộ phim nổi tiếng bằng hành động trong 20 giây."],
+ ["game","Lần lượt kể tên nhân vật hoạt hình không phải con người."],
+ ["game","Lần lượt kể tên các bộ môn thi đấu Olympic."],
+ ["vote","Xếp hạng nhậu khỏe nhất đến yếu nhất."],
+ ["vote","Ai là người bạn không muốn đi du lịch chung nhất?"],
+ ["vote","Ai hay trễ hẹn nhất?"],
+ ["vote","Ai có khả năng cưới sớm nhất?"],
+ ["game","Không ai được nói tiếng Anh đến lượt sau của bạn."],
+ ["game","Nêu 3 điều trong 5 giây."],
+ ["game","Lần lượt kể các loại hoa quả có 1 hạt."],
+ ["game","Chơi trò Đi Chợ."],
+ ["game","Đếm ngược 3 giây, nhìn vào 1 người. Ai nhìn nhau thì uống."],
+ ["game","Đếm số chia hết cho 3 phải vỗ tay."],
+ ["vote","Hô to: Ai là người có khả năng...? Mọi người cùng chỉ."],
+ ["game","Chơi game Tôi đã từng..."],
+ ["game","Chọn 1 số từ 1-100. Ai đoán trúng thì uống."],
+ ["game","Tôi là ai? Đoán nhân vật nổi tiếng."],
+ ["game","Đặt 3 câu hỏi, người đối diện phải trả lời vô lý trong 2 giây."],
+ ["game","Chơi Cham Cham Cham theo vòng."],
+ ["game","Bạn được quyền đặt ra 1 luật đến cuối game."],
+ ["game","Đặt 1 cốc rượu giữa bàn. Ai làm tràn sẽ uống."],
+ ["vote","Đếm ngược 3 giây, chọn người vui tính nhất."],
+ ["game","Mô tả 1 người trong bàn nhậu cho người đối diện đoán."],
+ ["game","Đếm ngược 3 giây, chọn số từ 1-5. Ai trùng thì uống."],
+ ["drink","Uống cùng người bên trái 1 ly."],
+ ["drink","Uống cùng người bên phải 1 ly."],
+ ["vote","Chỉ tay vào người nhậu khỏe nhất."],
+ ["vote","Chỉ tay vào người dễ yêu nhất."],
+ ["drink","Người nhỏ tuổi nhất uống."],
+ ["drink","Người lớn tuổi nhất uống."],
+ ["drink","Tất cả con trai uống."],
+ ["drink","Tất cả con gái uống."],
+ ["drink","Người mặc áo tối màu uống."],
+ ["drink","Người mặc áo sáng màu uống."],
+ ["drink","Người vừa dùng điện thoại gần nhất uống."],
+ ["drink","Người độc thân uống."],
+ ["drink","Người có người yêu uống."],
+ ["drink","Người cười đầu tiên uống."],
+ ["drink","Người nói nhiều nhất uống."]   // <- dòng cuối: KHÔNG có dấu phẩy
+];
+
+
+/* =============== 3. BIẾN TRẠNG THÁI =============== */
+
+// Hàm rút gọn: $("abc") = tìm phần tử HTML có id="abc"
+const $ = id => document.getElementById(id);
+
+// Gom các phần tử HTML cần dùng vào 1 chỗ để gọi cho gọn (el.card, el.question...)
+const el = {
+  card:$("card"), tag:$("tag"), who:$("who"), icon:$("icon"), question:$("question"),
+  hint:$("hint"), timer:$("timer"), remaining:$("remaining"), bar:$("barFill"),
+  turn:$("turn"), filters:$("filters"), modal:$("modal"), list:$("playerList"),
+  input:$("nameInput"), musicBtn:$("musicBtn"), sfxBtn:$("sfxBtn")
+};
+
+let deck = [];       // Bộ bài hiện tại (các thẻ chưa rút)
+let total = 0;       // Tổng số thẻ lúc mới xáo (dùng để tính thanh tiến độ)
+let busy = false;    // true khi thẻ đang lật -> chặn bấm liên tục gây lỗi
+let turnIdx = 0;     // Đếm lượt: dùng để biết đến người chơi thứ mấy
+
+// Danh sách người chơi và loại thẻ đang bật, lấy từ bộ nhớ trình duyệt (nếu có)
+let players = load("dg_players", []);
+let active  = load("dg_active", Object.keys(CATS));
+
+// Đọc dữ liệu đã lưu trong trình duyệt. Nếu chưa có hoặc lỗi thì dùng giá trị mặc định d.
+function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } }
+// Lưu dữ liệu vào trình duyệt (để lần sau mở lại vẫn còn tên người chơi)
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+
+// Xáo ngẫu nhiên một danh sách (thuật toán Fisher-Yates, xáo đều và công bằng)
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [a[i],a[j]] = [a[j],a[i]];
+  }
+  return a;
+}
+// Chờ ms mili-giây (1000 ms = 1 giây). Dùng để chờ thẻ lật xong.
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+
+/* =============== 4. ÂM THANH ===============
+   Toàn bộ tiếng được tạo bằng code (Web Audio), không cần tải file nhạc nào.
+   Trình duyệt chỉ cho phát tiếng SAU KHI người dùng chạm vào màn hình ít nhất 1 lần. */
+let ac = null;            // "bộ xử lý âm thanh" của trình duyệt
+let master = null;        // nút chỉnh to/nhỏ tổng (tắt tiếng = đặt về 0)
+let musicGain = null;     // nút chỉnh to/nhỏ riêng cho nhạc nền
+let sfxOn = true;         // đang bật tiếng hiệu ứng?
+let musicOn = false;      // đang bật nhạc nền?
+let musicTimer = null;    // bộ hẹn giờ phát nhạc
+let step = 0;             // đếm nhịp của nhạc nền
+
+// Tạo bộ xử lý âm thanh ở lần gọi đầu tiên, các lần sau dùng lại
+function audio(){
+  if(!ac){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if(!AC) return null;                       // trình duyệt quá cũ, không hỗ trợ
+    ac = new AC();
+    master = ac.createGain(); master.gain.value = 1; master.connect(ac.destination);
+    musicGain = ac.createGain(); musicGain.gain.value = .5; musicGain.connect(master);
+  }
+  if(ac.state === "suspended") ac.resume();    // trình duyệt đang chặn thì mở lại
+  return ac;
+}
+
+// Phát 1 nốt nhạc.  freq = độ cao (Hz), dur = thời gian (giây),
+// type = kiểu âm ("sine" mềm, "square" gắt), vol = độ to, delay = chờ bao lâu mới phát
+function tone(freq, dur, type="sine", vol=.15, delay=0, dest){
+  const a = audio(); if(!a) return;
+  const t = a.currentTime + delay;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type; o.frequency.setValueAtTime(freq, t);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vol, t + .02);       // lên to nhanh
+  g.gain.exponentialRampToValueAtTime(0.0001, t + dur);    // rồi nhỏ dần
+  o.connect(g); g.connect(dest || master);
+  o.start(t); o.stop(t + dur + .05);
+}
+
+// Tiếng "vụt" khi lật thẻ (tạo từ tiếng ồn trắng quét từ trầm lên cao)
+function whoosh(){
+  const a = audio(); if(!a || !sfxOn) return;
+  const len = a.sampleRate * .35, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i] = (Math.random()*2-1) * (1 - i/len);
+  const s = a.createBufferSource(); s.buffer = buf;
+  const f = a.createBiquadFilter(); f.type = "bandpass"; f.Q.value = 1.2;
+  f.frequency.setValueAtTime(500, a.currentTime);
+  f.frequency.exponentialRampToValueAtTime(5000, a.currentTime + .3);
+  const g = a.createGain(); g.gain.value = .35;
+  s.connect(f); f.connect(g); g.connect(master); s.start();
+}
+
+// Tiếng báo khi lộ thẻ, mỗi loại thẻ một âm khác nhau
+function reveal(cat){
+  if(!sfxOn) return;
+  if(cat === "drink"){
+    [392,330,262,196].forEach((f,i) => tone(f, .22, "triangle", .18, i*.11));   // 4 nốt đi xuống
+  }else if(cat === "dare"){
+    [330,415,494,659].forEach((f,i) => tone(f, .18, "square", .06, i*.07));     // 4 nốt đi lên
+  }else{
+    tone(784, .5, "sine", .16); tone(1175, .6, "sine", .1, .09);                // tiếng "ting" 2 nốt
+  }
+}
+
+// Tiếng bíp (dùng cho đồng hồ). n = số tiếng bíp liên tiếp
+function beep(f=880, n=1){ if(!sfxOn) return; for(let i=0;i<n;i++) tone(f, .15, "square", .08, i*.2); }
+
+// Nhạc nền: mỗi 0.46 giây gọi musicStep 1 lần, chọn ngẫu nhiên 1 nốt trong SCALE
+const SCALE = [220,261.63,293.66,329.63,392,440,523.25,587.33];
+function musicStep(){
+  if(!ac) return;
+  if(step % 8 === 0) tone([110,130.8,98,146.8][(step/8)%4|0], 3.2, "sine", .22, 0, musicGain);  // nốt trầm mỗi 8 nhịp
+  if(Math.random() < .7) tone(SCALE[Math.random()*SCALE.length|0], 1.6, "triangle", .07, 0, musicGain);
+  step++;
+}
+
+// Bật / tắt nhạc nền (gắn vào nút 🎵)
+function toggleMusic(){
+  audio(); musicOn = !musicOn;
+  clearInterval(musicTimer);
+  if(musicOn) musicTimer = setInterval(musicStep, 460);
+  el.musicBtn.classList.toggle("on", musicOn);     // bật thì nút có viền xanh lá
+}
+
+// Bật / tắt TẤT CẢ tiếng (gắn vào nút 🔊)
+function toggleSfx(){
+  audio(); sfxOn = !sfxOn;
+  master.gain.value = sfxOn ? 1 : 0;
+  el.sfxBtn.innerHTML = sfxOn ? '<span class="ic">🔊</span>Tiếng' : '<span class="ic">🔇</span>Đã tắt';
+  el.sfxBtn.classList.toggle("on", sfxOn);
+}
+
+
+/* =============== 5. PHÁO HOA NEON ===============
+   Vẽ các hạt sáng bắn ra từ giữa thẻ lên lớp <canvas id="fx"> */
+const cv = $("fx"), cx = cv.getContext("2d");
+let parts = [];    // danh sách các hạt đang bay
+let raf = 0;       // mã của vòng lặp vẽ (0 = đang không vẽ)
+
+// Chỉnh kích thước canvas bằng đúng màn hình (nhân thêm tỉ lệ để nét trên màn hình sắc nét)
+function sizeCanvas(){
+  const r = Math.min(devicePixelRatio || 1, 2);
+  cv.width = innerWidth * r; cv.height = innerHeight * r;
+  cx.setTransform(r,0,0,r,0,0);
+}
+addEventListener("resize", sizeCanvas); sizeCanvas();
+
+// Bắn pháo hoa. color = màu chính, n = số hạt (nhiều hạt = pháo to hơn)
+function burst(color, n=90){
+  // Nếu người dùng bật "giảm chuyển động" trong máy thì không bắn
+  if(matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  const r = el.card.getBoundingClientRect();
+  const x = r.left + r.width/2, y = r.top + r.height/2;      // điểm giữa thẻ
+  const pal = [color,"#ff3df2","#00e5ff","#ffd23f","#ffffff"];   // bảng màu hạt
+  for(let i=0;i<n;i++){
+    const a = Math.random()*Math.PI*2, v = 3 + Math.random()*8;   // hướng và tốc độ ngẫu nhiên
+    parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v - 3,s:2+Math.random()*4,
+      life:1,c:pal[Math.random()*pal.length|0],g:.18+Math.random()*.1});
+  }
+  if(!raf) raf = requestAnimationFrame(tick);
+}
+
+// Mỗi khung hình: di chuyển và vẽ lại các hạt, hạt hết "mạng" thì bỏ đi
+function tick(){
+  cx.clearRect(0,0,innerWidth,innerHeight);
+  parts = parts.filter(p => p.life > 0);
+  for(const p of parts){
+    p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= .985; p.life -= .014;   // g = trọng lực kéo hạt xuống
+    cx.globalAlpha = Math.max(p.life,0);
+    cx.shadowColor = p.c; cx.shadowBlur = 12; cx.fillStyle = p.c;
+    cx.fillRect(p.x, p.y, p.s, p.s);
+  }
+  cx.globalAlpha = 1; cx.shadowBlur = 0;
+  raf = parts.length ? requestAnimationFrame(tick) : 0;    // còn hạt thì vẽ tiếp, hết thì dừng cho đỡ tốn pin
+  if(!raf) cx.clearRect(0,0,innerWidth,innerHeight);
+}
+
+
+/* =============== 6. BỘ BÀI: XÁO VÀ RÚT =============== */
+
+// Tạo bộ bài mới: lấy các thẻ thuộc loại đang bật rồi xáo ngẫu nhiên
+function buildDeck(){
+  deck = shuffle(RAW.filter(c => active.includes(c[0])));
+  total = deck.length;
+  updateStatus();
+}
+
+// Cập nhật chữ "Còn lại ... thẻ", thanh tiến độ và nút "Đến lượt"
+function updateStatus(){
+  el.remaining.textContent = deck.length;
+  el.bar.style.width = total ? (deck.length/total*100) + "%" : "0%";
+  const next = players.length ? players[turnIdx % players.length] : null;   // % để quay vòng về người đầu
+  el.turn.innerHTML = next ? "🎯 Đến lượt: <b></b>" : "👥 Thêm người chơi";
+  if(next) el.turn.querySelector("b").textContent = next;   // dùng textContent để tên không bị hiểu nhầm là code
+}
+
+// Hiện 1 thẻ lên: nếu đang mở thẻ cũ thì úp lại trước, đổi nội dung, rồi lật thẻ mới
+async function showCard(data){
+  const flipped = el.card.classList.contains("flipped");
+  if(flipped){ el.card.classList.remove("flipped"); await sleep(450); }   // úp thẻ cũ, chờ lật xong
+  fill(data);                                                              // đổi nội dung mặt sau
+  el.card.classList.add("flipped");                                        // lật ra
+  await sleep(380);
+}
+
+// Điền nội dung vào mặt sau thẻ (tên loại, icon, câu hỏi, gợi ý, tên người)
+function fill(d){
+  stopTimer();
+  const cat = CATS[d.cat];
+  el.card.style.setProperty("--c", cat.color);     // đổi màu viền, ánh sáng của thẻ theo loại
+  el.tag.textContent = d.cat === "end" ? "Hết bài" : cat.name;
+  el.icon.textContent = cat.icon;
+  el.question.textContent = d.text;
+  el.hint.textContent = cat.hint;
+  el.who.innerHTML = "";
+  if(d.who){
+    el.who.append("Dành cho ");
+    const b = document.createElement("b"); b.textContent = d.who; el.who.append(b);
+  }
+  el.timer.hidden = (d.cat === "drink");     // thẻ "Cạn ly" không cần đồng hồ nên ẩn nút đi
+}
+
+// RÚT THẺ - hàm quan trọng nhất, chạy mỗi khi bấm nút / chạm thẻ / vuốt / nhấn phím
+async function drawCard(){
+  if(busy) return;           // đang lật dở thì bỏ qua
+  busy = true;
+  audio(); whoosh();
+  if(navigator.vibrate) navigator.vibrate(30);     // rung nhẹ (chỉ Android)
+
+  // Hết bài: hiện thông báo
+  if(deck.length === 0){
+    await showCard({cat:"drink", text:"🍻 Hết bộ bài rồi! Bấm XÁO BÀI để chơi vòng mới."});
+    el.tag.textContent = "Hết bài";
+    burst("#ffd23f", 60);
+    busy = false; return;
+  }
+
+  const [cat, text] = deck.pop();    // lấy thẻ trên cùng ra khỏi bộ bài
+  const who = players.length ? players[turnIdx % players.length] : "";   // người được chỉ định
+  if(players.length) turnIdx++;      // chuyển lượt sang người kế tiếp
+  updateStatus();
+
+  await showCard({cat, text, who});
+  reveal(cat);                                                // phát tiếng
+  burst(CATS[cat].color, cat === "drink" ? 140 : 70);         // thẻ "Cạn ly" bắn pháo nhiều hơn
+  if(navigator.vibrate) navigator.vibrate(cat === "drink" ? [40,40,80] : 20);
+  busy = false;
+}
+
+// XÁO BÀI - tạo bộ bài mới và úp thẻ lại
+async function resetDeck(){
+  if(busy) return;
+  buildDeck();
+  if(el.card.classList.contains("flipped")){
+    stopTimer();
+    el.card.classList.remove("flipped");
+  }
+  whoosh();
+  // 3 dòng dưới làm thẻ chớp sáng 1 lần (xóa class rồi thêm lại để chạy lại hiệu ứng)
+  el.card.classList.remove("pulse"); void el.card.offsetWidth; el.card.classList.add("pulse");
+}
+
+
+/* =============== 7. ĐỒNG HỒ BẤM GIỜ TRÊN THẺ =============== */
+let tInt = null;    // bộ đếm giây (null = đồng hồ đang không chạy)
+
+// Dừng đồng hồ và trả nút về chữ ban đầu
+function stopTimer(){
+  clearInterval(tInt); tInt = null;
+  el.timer.className = "timer";
+  el.timer.textContent = "⏱ Bấm giờ " + TIMER_SECONDS + "s";
+}
+
+// Bấm vào nút đồng hồ: đang chạy thì dừng, chưa chạy thì bắt đầu đếm ngược
+function startTimer(e){
+  e.stopPropagation();                  // tránh việc bấm đồng hồ lại bị hiểu là "rút thẻ mới"
+  if(tInt){ stopTimer(); return; }
+  let n = TIMER_SECONDS;
+  el.timer.className = "timer run";
+  el.timer.textContent = "⏱ " + n + "s";
+  tInt = setInterval(() => {            // chạy hàm bên trong mỗi 1000 ms = 1 giây
+    n--;
+    if(n > 0){
+      el.timer.textContent = "⏱ " + n + "s";
+      if(n <= 3) beep(660);             // 3 giây cuối thì bíp mỗi giây
+    }else{
+      clearInterval(tInt); tInt = null;
+      el.timer.className = "timer end";
+      el.timer.textContent = "HẾT GIỜ! 🍺";
+      beep(988, 3);
+      if(navigator.vibrate) navigator.vibrate([100,60,100,60,200]);
+    }
+  }, 1000);
+}
+
+
+/* =============== 8. BỘ LỌC LOẠI THẺ ===============
+   Tạo các nút chip (💬 Thật lòng, 👉 Bình chọn...) từ danh sách CATS. */
+function renderFilters(){
+  el.filters.innerHTML = "";
+  Object.entries(CATS).forEach(([k,v]) => {       // k = mã loại, v = thông tin loại
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "chip" + (active.includes(k) ? "" : " off");   // loại đang tắt thì thêm class "off" (làm mờ)
+    b.style.setProperty("--c", v.color);
+    b.textContent = v.icon + " " + v.name;
+    b.setAttribute("aria-pressed", active.includes(k));
+    b.onclick = () => {
+      if(active.includes(k)){
+        if(active.length === 1) return;           // luôn giữ lại ít nhất 1 loại, không cho tắt hết
+        active = active.filter(x => x !== k);     // tắt loại này
+      }else active.push(k);                       // bật loại này
+      save("dg_active", active);
+      renderFilters(); resetDeck();               // vẽ lại các chip và xáo bộ bài mới
+    };
+    el.filters.append(b);
+  });
+}
+
+
+/* =============== 9. NGƯỜI CHƠI =============== */
+
+// Vẽ lại danh sách tên trong cửa sổ "Người chơi"
+function renderPlayers(){
+  el.list.innerHTML = "";
+  if(!players.length){
+    const p = document.createElement("span"); p.className = "empty";
+    p.textContent = "Chưa có ai. Bạn có thể chơi không cần tên.";
+    el.list.append(p);
+  }
+  players.forEach((n,i) => {
+    const c = document.createElement("span"); c.className = "chip";
+    const t = document.createElement("span"); t.textContent = n;
+    const x = document.createElement("button"); x.className = "x"; x.type = "button";
+    x.textContent = "✕"; x.setAttribute("aria-label","Xóa " + n);
+    x.onclick = () => { players.splice(i,1); save("dg_players", players); renderPlayers(); updateStatus(); };   // bấm ✕ để xóa tên
+    c.append(t, x); el.list.append(c);
+  });
+}
+function openModal(){ el.modal.hidden = false; renderPlayers(); setTimeout(() => el.input.focus(), 50); }
+function closeModal(){ el.modal.hidden = true; updateStatus(); }
+
+// Khi bấm "Thêm" hoặc nhấn Enter trong ô nhập tên
+$("addForm").addEventListener("submit", e => {
+  e.preventDefault();                      // chặn trình duyệt tải lại trang
+  const v = el.input.value.trim();         // bỏ khoảng trắng thừa ở 2 đầu
+  // Chỉ thêm khi: có chữ, chưa đủ 20 người, và tên chưa bị trùng
+  if(v && players.length < 20 && !players.includes(v)){
+    players.push(v); save("dg_players", players); renderPlayers();
+  }
+  el.input.value = ""; el.input.focus();
+});
+
+
+/* =============== 10. SỰ KIỆN: GẮN HÀNH ĐỘNG VÀO NÚT =============== */
+el.card.addEventListener("click", drawCard);     // chạm vào thẻ = rút thẻ
+$("drawBtn").onclick = drawCard;                 // nút RÚT THẺ
+$("shuffleBtn").onclick = resetDeck;             // nút Xáo bài
+$("playersBtn").onclick = openModal;             // nút Người chơi
+el.turn.onclick = openModal;                     // bấm vào chữ "Đến lượt" cũng mở cửa sổ người chơi
+$("closeModal").onclick = closeModal;
+el.modal.addEventListener("click", e => { if(e.target === el.modal) closeModal(); });   // bấm ra ngoài hộp thì đóng
+el.musicBtn.onclick = toggleMusic;
+el.sfxBtn.onclick = toggleSfx;
+el.timer.addEventListener("click", startTimer);
+
+// Vuốt thẻ từ dưới lên trên để rút bài (dành cho điện thoại)
+let sy = null, sx = null;     // vị trí ngón tay lúc bắt đầu chạm
+el.card.addEventListener("touchstart", e => { sy = e.touches[0].clientY; sx = e.touches[0].clientX; }, {passive:true});
+el.card.addEventListener("touchend", e => {
+  if(sy === null) return;
+  const dy = e.changedTouches[0].clientY - sy, dx = e.changedTouches[0].clientX - sx;   // quãng đường ngón tay đã di chuyển
+  sy = sx = null;
+  // Vuốt lên hơn 60px và vuốt theo chiều dọc nhiều hơn chiều ngang thì tính là "vuốt lên"
+  if(dy < -60 && Math.abs(dy) > Math.abs(dx)){ e.preventDefault(); drawCard(); }
+});
+
+// Phím tắt trên máy tính: Space hoặc Enter = rút thẻ, Esc = đóng cửa sổ người chơi
+document.addEventListener("keydown", e => {
+  if(!el.modal.hidden){ if(e.key === "Escape") closeModal(); return; }
+  if(e.key === " " || e.key === "Enter"){
+    if(e.target.closest("button, input")) return;    // đang focus nút/ô nhập thì để nó tự xử lý
+    e.preventDefault(); drawCard();
+  }
+});
+
+// Giữ màn hình sáng khi đang chơi (nếu trình duyệt cho phép)
+async function keepAwake(){
+  try{ if("wakeLock" in navigator) await navigator.wakeLock.request("screen"); }catch(e){}
+}
+document.addEventListener("visibilitychange", () => { if(!document.hidden) keepAwake(); });   // quay lại tab thì xin giữ sáng lại
+keepAwake();
+
+
+/* =============== 11. KHỞI ĐỘNG =============== */
+if(!active.length) active = Object.keys(CATS);   // phòng khi dữ liệu lưu bị rỗng
+el.filters.hidden = !SHOW_FILTERS;   // ẩn hoặc hiện hàng nút lọc theo cài đặt ở đầu phần JS
+renderFilters();      // vẽ các nút lọc loại thẻ
+buildDeck();          // xáo bộ bài lần đầu
+stopTimer();          // đặt chữ ban đầu cho nút đồng hồ
+</script>
+</body>
+</html>
