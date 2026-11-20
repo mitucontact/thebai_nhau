@@ -228,6 +228,10 @@ h1{font-size:19px;font-weight:900;letter-spacing:.04em;text-transform:uppercase}
   font-size:clamp(24px,7vw,34px);font-weight:800;line-height:1.22;letter-spacing:-.015em;
   text-wrap:pretty;overflow-wrap:anywhere;
 }
+/* Câu dài thì thu nhỏ chữ (JS gắn data-len = s / m / l / xl theo số ký tự) */
+.question[data-len="m"]{font-size:clamp(21px,6vw,28px)}
+.question[data-len="l"]{font-size:clamp(18px,5vw,23px);font-weight:700}
+.question[data-len="xl"]{font-size:clamp(15px,4.2vw,18px);font-weight:700;line-height:1.3}
 
 /* Chân thẻ: đường kẻ, gợi ý luật chơi bên trái, nút bấm giờ bên phải */
 .foot2{
@@ -618,97 +622,184 @@ const CATS = {
      - Mã loại phải trùng với 1 mã trong CATS ở trên (truth, vote, dare, game, drink)
    Muốn thêm thẻ: copy 1 dòng, dán xuống dưới, sửa lại nội dung.
    Muốn xóa thẻ: xóa nguyên dòng đó.
-   Muốn đổi loại của thẻ: sửa chữ đầu tiên. */
+   Muốn đổi loại của thẻ: sửa chữ đầu tiên.
+   Lưu ý: bộ 175 thẻ hiện tại chưa có thẻ "drink" (Cạn ly) nào nên nút lọc Cạn ly tự ẩn; thêm 1 thẻ drink là nút tự hiện. */
 const RAW = [
  ["truth","Kể 1 lần bạn nói dối mà không ai biết."],
  ["vote","Nếu phải chọn trong bàn nhậu, bạn chọn ai để tư vấn tình cảm cho bạn?"],
  ["vote","Giả sử trong 1 bộ phim, nếu bạn là chính diện thì bạn sẽ không muốn ai là phản diện?"],
- ["vote","Ai là người dễ bị trap tình cảm nhất?"],
+ ["vote","Ai là người dễ bị “trap” tình cảm nhất?"],
  ["truth","Bạn từng ghost ai chưa? Vì sao?"],
  ["truth","Ước mơ hiện tại của bạn là gì?"],
  ["truth","Hãy kể lần gần nhất bạn khóc? Tại sao?"],
  ["vote","Trong bàn này, ai là người bạn tin tưởng nhất? Vì sao?"],
- ["truth","Lần gần nhất bạn quê là khi nào?"],
  ["truth","Điều bạn hối hận nhất trong 1 năm qua?"],
- ["vote","Ai là người diễn sâu nhất nhóm?"],
+ ["vote","Ai là người “diễn sâu” nhất nhóm?"],
  ["truth","Bạn từng bị từ chối tình cảm chưa? Chuyện gì đã xảy ra?"],
  ["truth","Bạn từng từ chối tình cảm ai đó chưa? Chuyện gì đã xảy ra?"],
- ["vote","Ai là người đáng tin nhất khi giữ bí mật? Tại sao?"],
- ["truth","Bạn từng làm điều gì hèn nhất?"],
- ["vote","Ai là người bạn nghĩ có quá khứ dữ dội nhất? Vì sao?"],
+ ["truth","Bạn từng làm điều gì “hèn” nhất?"],
+ ["vote","Ai là người bạn nghĩ có quá khứ “dữ dội” nhất? Vì sao?"],
  ["vote","Giả sử các bạn làm việc cùng nhau, bạn nghĩ ai là người hợp làm leader nhất?"],
  ["vote","Ai là người dễ say nhất nhóm?"],
  ["vote","Bạn muốn thấy ai xỉn nhất nhóm?"],
  ["vote","Ai có tửu lượng cao nhất nhóm?"],
  ["vote","Ai là người sống tình cảm nhất?"],
- ["vote","Nếu phải đối mặt với vấn đề tâm lý, bạn chọn ai để xin lời khuyên?"],
- ["vote","Giả sử bạn gặp tai nạn, ai là người bạn tìm đầu tiên trong bàn nhậu?"],
- ["vote","Chọn 1 người đưa ra quyết định quan trọng thay cho bạn?"],
+ ["vote","Nếu phải đang đối mặt với 1 vấn đề tâm lý, bạn chọn ai trong nhóm để xin lời khuyên và giúp đỡ?"],
+ ["vote","GIả sử bạn gặp tai nạn, ai là người bạn tìm đầu tiên trong bàn nhậu? tại sao?"],
+ ["vote","Chọn 1 người đưa ra quyết định quan trọng thay cho bạn? tại sao?"],
+ ["vote","Ai đáng tin nhất khi giữ bí mật? tại sao?"],
  ["truth","Bạn hãy kể 1 điều trong cuộc sống khiến bạn khó hiểu tới hiện tại?"],
  ["truth","Món quà bạn muốn được tặng ở hiện tại là gì?"],
  ["truth","Bạn nghĩ bạn khó tính trong việc gì? Tại sao?"],
- ["truth","Hãy kể 1 điều mọi người chưa biết về bạn?"],
- ["dare","Miêu tả 1 người trong bàn bằng hành động để mọi người đoán."],
- ["dare","Nhảy một điệu bất kỳ ngay tại chỗ."],
- ["dare","Khen từng người trong bàn, mỗi người 1 câu."],
- ["truth","Tự nêu 3 điểm xấu của bản thân."],
- ["dare","Đặt biệt danh mới cho tất cả mọi người."],
- ["dare","Tự PR bản thân như đang phỏng vấn xin việc."],
- ["dare","Thách đấu 1 game nhỏ với mọi người. Thắng: mọi người uống. Thua: bạn uống 2 ly."],
- ["truth","Hãy kể 1 thói quen tích cực và 1 thói quen tiêu cực mới xuất hiện gần đây."],
- ["truth","Điều vui nhất mà 1 người trong nhóm làm với bạn là gì?"],
- ["truth","Bạn hãy nói ra 1 điều bạn muốn đính chính về bạn."],
- ["dare","Đại diện cho giới tính của bạn và đặt 1 câu hỏi cho giới tính còn lại."],
- ["truth","Lần gần nhất bạn khen người bên phải là khi nào?"],
- ["dare","Người đối diện nhắm mắt lại, hãy nói 3 điều họ nghĩ về bạn."],
- ["truth","Bạn nghĩ bạn cần đính chính điều gì với mọi người?"],
- ["truth","Bạn có muốn thay đổi điều gì ở bản thân không?"],
+ ["dare","Miêu tả 1 người trong bàn bằng hành động để mọi người đoán"],
+ ["dare","Nhảy một điệu bất kỳ ngay tại chỗ"],
+ ["dare","Khen từng người trong bàn (mỗi người 1 câu)"],
+ ["truth","Tự nêu 3 điểm xấu của bản thân"],
+ ["dare","Đặt biệt danh mới cho tất cả mọi người"],
+ ["dare","Xem mọi người xung quanh là nhà tuyển dụng, tự PR bản thân để thuyết phục mọi người tuyển bạn."],
+ ["dare","Bạn chọn 1 game nhỏ để thách đấu với mọi người. Mọi người cử đại diện ra để đấu với bạn. Nếu bạn thắng thì mọi người uống. Nếu thua thì bạn uống 2 ly."],
+ ["truth","Hãy kể 1 thói quen tích cực và 1 thói quen tiêu cực của bạn mới xuất hiện gần đây? Tại sao?"],
+ ["truth","Điều vui nhất mà 1 người trong nhóm làm với bạn là gì? Tại sao? ( hãy uống với người đó 1 ly ăn mừng nhé)"],
+ ["dare","Bạn hãy đại diện cho giới tính của bạn và đặt 1 câu hỏi cho các giới tính còn lại trả lời."],
+ ["truth","Bạn hãy kể lần gần nhất bạn khen người bên phải vs 1 ai đó? Về điều gì? Tại sao?"],
+ ["dare","Người đối diện bạn nhắm mắt lại, hãy nói 3 điều người đối diện tưởng tượng về bạn khi nhắn đến bạn?"],
+ ["truth","Bạn nghĩ bạn cần đính chính điều gì với mọi người? Tại sao?"],
+ ["truth","Bạn có muốn thay đổi điều gì ở bạn hay không? Tại sao?"],
  ["truth","Điều khiến bạn khó chịu gần đây là gì?"],
- ["truth","Bạn nghĩ phiên bản trước đây của bạn sẽ không tin điều gì ở hiện tại?"],
- ["truth","Hãy kể về lần hạnh phúc gần đây nhất."],
- ["truth","Bạn đang cố gắng tìm đáp án cho câu hỏi nào trong cuộc sống?"],
+ ["truth","Bạn nghĩ bản thân khi còn trước sẽ không tin điều gì ở hiện tại?"],
+ ["truth","Hãy kể về lần hạnh phúc gần đây nhất của bạn?"],
+ ["truth","Bạn nghĩ bạn đang cố gắng tìm đáp án cho câu hỏi nào trong cuộc sống?"],
  ["truth","Bài học nào khiến bạn mất nhiều thời gian nhất ở hiện tại?"],
- ["truth","Bạn muốn thay đổi quá khứ hay biết trước tương lai?"],
+ ["truth","bạn muốn thay đổi 1 điều trong quá khứ hay biết trc 1 việc ở tương lai?"],
  ["truth","Bạn muốn bạn chọn nghề hay nghề chọn bạn?"],
- ["dare","Miêu tả một bộ phim nổi tiếng bằng hành động trong 20 giây."],
- ["game","Lần lượt kể tên nhân vật hoạt hình không phải con người."],
- ["game","Lần lượt kể tên các bộ môn thi đấu Olympic."],
- ["vote","Xếp hạng nhậu khỏe nhất đến yếu nhất."],
- ["vote","Ai là người bạn không muốn đi du lịch chung nhất?"],
- ["vote","Ai hay trễ hẹn nhất?"],
- ["vote","Ai có khả năng cưới sớm nhất?"],
- ["game","Không ai được nói tiếng Anh đến lượt sau của bạn."],
- ["game","Nêu 3 điều trong 5 giây."],
+ ["dare","Miêu tả một bộ phim nổi tiếng bằng hành động trong 20 giây cho người đối diện. Không đoán đc thì cả 2 uống."],
+ ["game","Lần lượt kể tên nhân vật hoạt hình không phải con người. Ai trùng hoặc không trả lời đc thì uống."],
+ ["game","Lần lượt kể tên các bộ môn thi đấu có trong Olympic. Ai trùng hoặc không trả lời đc thì uống."],
+ ["vote","Xếp hạng: nhậu khỏe nhất → yếu nhất"],
+ ["vote","Ai là người bạn không muốn đi du lịch chung nhất? Hãy sắp xếp thứ tự và tại sao?"],
+ ["vote","Ai hay trễ hẹn nhất? Hãy sắp xếp thứ tự và tại sao?"],
+ ["vote","Ai có khả năng cưới sớm nhất? Hãy sắp xếp thứ tự và tại sao?"],
+ ["game","Tất cả không nói tiếng Anh cho đến lượt sau của bạn( vi phạm 1 lần = 1 ly)"],
  ["game","Lần lượt kể các loại hoa quả có 1 hạt."],
- ["game","Chơi trò Đi Chợ."],
- ["game","Đếm ngược 3 giây, nhìn vào 1 người. Ai nhìn nhau thì uống."],
- ["game","Đếm số chia hết cho 3 phải vỗ tay."],
- ["vote","Hô to: Ai là người có khả năng...? Mọi người cùng chỉ."],
- ["game","Chơi game Tôi đã từng..."],
- ["game","Chọn 1 số từ 1-100. Ai đoán trúng thì uống."],
- ["game","Tôi là ai? Đoán nhân vật nổi tiếng."],
- ["game","Đặt 3 câu hỏi, người đối diện phải trả lời vô lý trong 2 giây."],
- ["game","Chơi Cham Cham Cham theo vòng."],
- ["game","Bạn được quyền đặt ra 1 luật đến cuối game."],
- ["game","Đặt 1 cốc rượu giữa bàn. Ai làm tràn sẽ uống."],
- ["vote","Đếm ngược 3 giây, chọn người vui tính nhất."],
- ["game","Mô tả 1 người trong bàn nhậu cho người đối diện đoán."],
- ["game","Đếm ngược 3 giây, chọn số từ 1-5. Ai trùng thì uống."],
- ["drink","Uống cùng người bên trái 1 ly."],
- ["drink","Uống cùng người bên phải 1 ly."],
- ["vote","Chỉ tay vào người nhậu khỏe nhất."],
- ["vote","Chỉ tay vào người dễ yêu nhất."],
- ["drink","Người nhỏ tuổi nhất uống."],
- ["drink","Người lớn tuổi nhất uống."],
- ["drink","Tất cả con trai uống."],
- ["drink","Tất cả con gái uống."],
- ["drink","Người mặc áo tối màu uống."],
- ["drink","Người mặc áo sáng màu uống."],
- ["drink","Người vừa dùng điện thoại gần nhất uống."],
- ["drink","Người độc thân uống."],
- ["drink","Người có người yêu uống."],
- ["drink","Người cười đầu tiên uống."],
- ["drink","Người nói nhiều nhất uống."]   // <- dòng cuối: KHÔNG có dấu phẩy
+ ["game","Chia hết cho 3, mọi người lần lượt đếm số, số chia hết cho 3 phải vỗ tay không đc đếm. Ai sai thì uống."],
+ ["vote","Hô to: “ Ai là người có khả năng … . 3. 2. 1” Mọi người cùng chỉ vào một người. Người bị chỉ nhiều nhất uống."],
+ ["game","Bạn làm trọng tài, chọn 1 số trong khoảng 1 - 100, lần lượt từng người chọn và rút ngắn lại. Ai chọn trúng thì uống."],
+ ["game","“ Tôi là ai ?” Bạn với người đối diện lần lượt chọn 1 nhân vật nổi tiếng. Trong 10 lượt, lần lượt hỏi nhau những câu hỏi để tìm ra danh tính. Ai thua thì uống."],
+ ["game","Bạn sẽ đặt 3 câu hỏi cho người đối diện nhưng trong 2s người đối diện phải trả lời không hợp lý. Nếu trả lời hợp lý thì uống và ngược lại."],
+ ["game","Lần lượt chơi Cham Cham Cham theo vòng. Ai thua thì uống."],
+ ["game","Bạn được quyền đặt ra 1 luật. Luật này sẽ tồn tại đến cuối game. Ai vi phạm thì uống."],
+ ["vote","Đếm ngược 3s, chọn 1 người vui tính nhất. Người đó uống."],
+ ["game","Mô tả 1 người trong bàn nhậu với người đối diện nhưng không được nói tên hay thông tin cá nhân. Trong 15s không đoán đc thì cả 2 uống."],
+ ["game","Đếm ngược 3s, chọn 1 số từ 1-5, ai trùng thì uống."],
+ ["vote","Ai là người nhắn tin lâu rep nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai trong nhóm dễ bị dụ đi chơi nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người hay “tới liền” nhưng 30 phút sau vẫn chưa thấy mặt? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng tiêu hết tiền lương nhanh nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người dễ có bồ nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người khó có bồ nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người dễ bị lừa nhất trong chuyện tình cảm? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng ghost người khác nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai trong nhóm có “red flag” mà mọi người đều biết? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người nói chuyện vô tri nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng ngủ quên trong khi làm gì đó? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người có thể sẽ quên sinh nhật bạn thân? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng stalk đỉnh nhất đám? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng kết hôn đột ngột nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng lạc đường dù Google Maps đang chỉ? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai hay ăn ké đồ của người khác? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người có thể ngủ trong mọi hoàn cảnh? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai là người có khả năng trở thành “mẹ/bố” của cả nhóm? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng làm quân sư tình yêu nhưng tình yêu của mình thì nát? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Ai có khả năng nói chuyện với người lạ tự nhiên nhất? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["truth","Điều bạn từng thích làm đối với crush/ người yêu mà giờ nghĩ lại thì thấy quê?"],
+ ["truth","Tin nhắn xấu hổ nhất bạn từng gửi nhầm?"],
+ ["truth","Bạn từng giả vờ bận để không đi chơi với ai chưa?"],
+ ["truth","Điều đầu tiên bạn để ý khi gặp một người mới?"],
+ ["truth","Bạn dễ rung động vì ngoại hình hay tính cách hơn?"],
+ ["truth","Một thói quen kỳ lạ mà ít người biết về bạn?"],
+ ["truth","Lần gần nhất bạn quê muốn độn thổ là khi nào?"],
+ ["truth","Bạn từng nói dối bạn thân chuyện gì?"],
+ ["truth","Một điều bạn từng làm nhưng không bao giờ muốn kể lại?"],
+ ["truth","Người nổi tiếng nào bạn thấy cuốn hút?"],
+ ["truth","Một tính cách của người bên phải mà bạn muốn có?"],
+ ["vote","Ai là người dễ bị bắt nạt nhất nhóm? Tất cả cùng vote, bị chọn nhiều thì uống"],
+ ["vote","Một người nói “1, 2, 3”, tất cả phải chỉ vào người có khả năng yêu đương drama nhất. Người nhiều vote nhất → uống"],
+ ["vote","Ai trong nhóm có vẻ ngoan nhất nhưng thực ra không ngoan? Ai nhiều vote nhất → uống"],
+ ["vote","Ai là người trong đám bạn sẽ hỏi xin mượn tiền khi cần? Ai nhiều vote nhất → uống"],
+ ["vote","Ai hay nói “tao ổn” trong khi đang không ổn nhất? Ai nhiều vote nhất → uống"],
+ ["vote","Ai là người có cái tôi to nhất nhóm? Ai nhiều vote nhất → uống"],
+ ["vote","Ai hay nói “tao không quan tâm” nhưng thật ra quan tâm nhất? Ai nhiều vote nhất → uống"],
+ ["vote","Ai là người giữ bình tĩnh giỏi nhất? Ai nhiều vote nhất → uống"],
+ ["vote","Ai có khả năng “thao túng tâm lý” người khác nhất? Ai nhiều vote nhất → uống"],
+ ["vote","Ai mà bạn nghĩ cần bị tịch thu điện thoại sau 12 giờ đêm? Ai nhiều vote nhất → uống"],
+ ["vote","Ai dễ rung động chỉ vì người ta đối xử tốt với mình? Ai nhiều vote nhất → uống"],
+ ["vote","Ai có khả năng yêu người khác chỉ vì cô đơn? Ai nhiều vote nhất → uống"],
+ ["vote","Ai sẽ là người đầu tiên mua nhà? Ai nhiều vote nhất → uống"],
+ ["truth","Người gần đây nhất bạn stalk trên mạng xã hội là ai?"],
+ ["truth","Bạn từng hối hận vì đã nhắn một tin nào đó chưa?"],
+ ["truth","Có chuyện gì bạn chưa từng kể với hội này?"],
+ ["truth","Điều gì dễ khiến bạn fall in love nhất?"],
+ ["truth","Nếu được xóa một người khỏi lịch sử tình cảm của mình, bạn xóa ai?"],
+ ["truth","Bạn nghĩ mình là green flag hay red flag? Vì sao?"],
+ ["truth","Điều gì ở bản thân mà bạn biết là red flag nhưng chưa sửa?"],
+ ["vote","Ai trong nhóm hiểu bạn nhất?"],
+ ["truth","Lần đầu gặp nhau, bạn ấn tượng điều gì về người bên phải bạn?"],
+ ["truth","Có điều gì ở người bên trái mà ban đầu mày không thích nhưng sau này lại thấy dễ thương?"],
+ ["truth","Điều gì khiến bạn vẫn muốn giữ tình bạn này tới bây giờ?"],
+ ["vote","Trong nhóm, ai là người bạn cảm thấy có thể gọi để tâm sự vào lúc 3 giờ sáng?"],
+ ["truth","Điều gì ở nhóm này khiến mày cảm thấy mình được là chính mình?"],
+ ["truth","Có khi nào tụi tao vô tình làm mày buồn mà tụi tao không biết không?"],
+ ["truth","Có chuyện gì mày từng muốn kể với tụi tao nhưng cuối cùng lại thôi?"],
+ ["truth","Gần đây mày thật sự ổn không?"],
+ ["truth","Có điều gì mày đang cố tỏ ra ổn nhưng thật ra không ổn lắm?"],
+ ["truth","Điều gì đang khiến mày suy nghĩ nhiều nhất thời gian gần đây?"],
+ ["truth","Có điều gì mày ước người khác hiểu về mày hơn không?"],
+ ["truth","Điều gì ở bản thân khiến mày tự hào nhất?"],
+ ["truth","Điều gì ở bản thân mà mày vẫn đang học cách chấp nhận?"],
+ ["truth","Có chuyện gì trong quá khứ mà bây giờ nghĩ lại mày thấy mình đã trưởng thành hơn rất nhiều?"],
+ ["truth","Mày nghĩ tình yêu quan trọng đến mức nào trong cuộc đời mày?"],
+ ["truth","Điều gì khiến mày cảm thấy được yêu?"],
+ ["truth","Điều gì là thứ mày tuyệt đối không muốn đánh đổi trong một mối quan hệ?"],
+ ["truth","Mày nghĩ mình đã thay đổi như thế nào sau những mối quan hệ trước?"],
+ ["truth","Mày sợ điều gì nhất khi yêu một người?"],
+ ["truth","Có bài học nào về tình yêu mà mày phải mất rất lâu mới hiểu?"],
+ ["truth","Mày nghĩ bản thân hiện tại đã sẵn sàng cho một mối quan hệ nghiêm túc chưa?"],
+ ["truth","Nếu tiền không phải vấn đề, mày muốn sống cuộc đời như thế nào?"],
+ ["truth","Mày muốn 5 năm nữa mình trở thành người như thế nào?"],
+ ["truth","Có ước mơ nào mày từng bỏ vì nghĩ nó quá xa vời không?"],
+ ["truth","Điều gì mày nhất định muốn làm ít nhất một lần trong đời?"],
+ ["truth","Có điều gì mày đang trì hoãn mà thật ra rất muốn làm?"],
+ ["vote","Ai trong nhóm đã thay đổi nhiều nhất từ lúc quen tới giờ?"],
+ ["truth","Có kỷ niệm nào của nhóm mà lúc đó thấy bình thường nhưng giờ nghĩ lại thấy quý không?"],
+ ["truth","Nếu một ngày cả nhóm không còn gặp nhau thường xuyên nữa, điều gì mày sẽ nhớ nhất?"],
+ ["truth","Mày nghĩ điều gì đã khiến tụi mình chơi với nhau lâu đến vậy?"],
+ ["truth","Nếu mỗi người trong nhóm có một “vai trò”, bạn nghĩ mình là ai?"],
+ ["truth","Nếu được quay lại một ngày cả nhóm từng đi chơi, mày muốn quay lại ngày nào?"],
+ ["truth","Có điều gì mày hy vọng tụi mình sẽ không bao giờ thay đổi?"],
+ ["game","Game tôi nói. Liên hệ Huy để giải thích."],
+ ["game","Ai là người để chân chạm đất cuối cùng thì uống"],
+ ["game","Hô to “ĐÓNG BĂNG” ai là người cử động trước 15 giây thì uống (kể cả miệng)"],
+ ["game","Xếp 10 món đồ lên bàn. Cho mọi người nhìn 10 giây. Che lại. Sau đó hỏi 3 người: Ví dụ “Cái ly lúc nãy nằm bên trái hay bên phải cái điện thoại?”. Ai trả lời sai → uống."],
+ ["game","Trong 1 vòng không được nói tục, ai nói tục thì uống"],
+ ["game","Mọi người cúi đầu, đếm đến 3 thì nhìn ngước mặt nhìn vào một người bất kỳ, ai nhìn nhau thì hun má nhau hoặc uống"],
+ ["game","Hỏi cả bàn một câu và tất cả mọi người lần lượt liệt kê, ai trả lời trùng so với mọi người thì uống. Câu hỏi ví dụ: Kể tên một món ăn Việt Nam."],
+ ["game","Chọn 1 số từ 1-10, ai chọn số không ai chọn thì thắng, những người chọn giống số thì uống"],
+ ["game","Cả nhóm phải đếm từ 1 → số người tham gia tương ứng. Nếu hai người nói cùng lúc hoặc là người cuối cùng → uống."],
+ ["game","Chọn ra 2 người để thi với nhau, đặt 1 ly ở giữa hai người, quản trò lần lượt hô từng hành động như “gãi đầu - xoa vai - …” người chơi phải thực hiện theo, cho đến khi quản trò hô “ Rượu “ phải chụm lấy cái ly. Ai không lấy được ly thì uống."],
+ ["game","Cả bàn nhắm mắt, bạn làm quản trò, bạn vỗ vai để chọn 3 người( trong đó 1 sói, 1 tiên tri, 1 bảo vệ), sau đó chơi như game Ma sói bình thường. Nhưng nếu ai bị giết thì uống 1 ly, sói thua thì uống 2 ly và nếu dân làng thua thì người còn sống phải uống 2 ly."],
+ ["game","“Số của tôi”, bạn và người đối diện chọn cho nhau một số bất kì từ 1 - 100. Sau đó lần lượt thay phiên hỏi nhau những thông tin để tìm ra đáp án con số được chỉ định. Ví dụ: Nếu tôi nhắn lượng tin nhắn như “số của tôi” thì có được xem là spam không? Ai thua thì uống."],
+ ["game","Lần lượt từng người trong bàn nhậu, rót rượu vào 1 ly chung, ai làm tràn rượu hoặc chạm vào rượu trong ly chung thì uống."],
+ ["game","Bạn chọn 1 từ, lần lượt mọi người hát có từ bạn chọn nhưng không được trùng bài hát. Ai trùng hoặc không hát được trong 15s thì uống."],
+ ["game","Game “Đi Chợ”."],
+ ["game","Game “Ai đã từng”. Giơ 1 bàn tay lên. Lần lượt từ bạn hô ra 1 sự việc gì đó. Nếu người nào từng làm thì gập 1 ngón tay lại. 3 người gập hết đầu tiên phải uống."],
+ ["game","Game “ Tôi là ai”. Bạn chọn 1 phạm trù. Sau đó bạn và người đối diện chọn cho nhau 1 đối tượng trong phạm trù đó ( lưu ý: để game công bằng, hãy chắc chắn đối phương biết bằng cách hỏi người đối phương thân nhất). Trong 10 câu, ai không đoán được thì uống."],
+ ["game","Game “Konpira Fune Fune”. Liên hệ người thiết kế hoặc gg để giải thích. Chơi 3 hiệp, ai thua 2 hiệp thì uống."],
+ ["game","Nêu 3 điều trong 5s. Chọn 1 người chơi cùng bạn, lần lượt đặt cho nhau 1 câu hỏi. Ai thua thì uống. VD: Hãy kể tên 3 cuốn sách."],
+ ["game","Game “ Thừa nhận”, bạn cùng người đối diện lần lượt đặt cho nhau 1 câu hỏi, ví dụ : “ Bạn có thừa nhận bạn yêu bạn B nhưng không dám tỏ tình vì sợ bị từ chối không?”. Lần lượt hỏi đến 1 trong 2 không thừa nhận 2 lần thì THUA. Phạt uống."],
+ ["game","Game “Tìm đồ vật bắt đầu bằng chữ cái bất kì” trong phạm vi mọi người tự quy định. Bạn chơi cùng người bên trái. Ai tìm được đầu tiên không phải uống."],
+ ["game","Game “ tay đập, tay né”, bạn chọn 1 người chơi game này cùng bạn, trong 30s đối phương sẽ đặt tay lên 1 mặt phẳng quy định và cố gắng không cho bạn đập tay trúng (chỉ được đập 1 lần). Ai thua thì uống."],
+ ["game","Game “ Top 5”, bạn chơi cùng người bên trái và người đối diện sẽ ra đề. Người ra đề search Google với cú pháp : “ Top 5 …”. Vd: “ Top 5 món ăn đặc sản Quy Nhơn nên thử”. Sau khi search, người ra đề đọc 4 đáp án trong top 5 và giữ lại 1 đáp án. Ai đoán được trước sẽ không phải uống."],
+ ["game","Lần lượt từng người kể 1 fact về bạn. Ai trùng hoặc không kể được thì uống."]
 ];
 
 
@@ -738,7 +829,15 @@ let active  = load("dg_active", Object.keys(CATS));
 // Thẻ do người chơi tự thêm (mỗi thẻ là ["mã loại","nội dung"], giống các dòng trong RAW) và lịch sử các thẻ đã rút.
 // Cả hai chỉ lưu trong trình duyệt của máy này (localStorage), không tự đẩy lên GitHub.
 let custom  = load("dg_custom", []).filter(c => Array.isArray(c) && CATS[c[0]] && typeof c[1] === "string");
+// Bỏ thẻ tự thêm nào đã trùng với thẻ gốc trong RAW (phòng khi đã lưu từ bộ câu hỏi cũ)
+custom = custom.filter(c => !RAW.some(r => r[1].toLowerCase() === c[1].toLowerCase()));
 let history = load("dg_history", []);
+
+// Loại nào đang có ít nhất 1 thẻ? (hiện tại loại "Cạn ly" chưa có thẻ nào nên sẽ không hiện nút lọc)
+function hasCards(k){ return RAW.concat(custom).some(c => c[0] === k); }
+// Bỏ khỏi danh sách đang bật những loại không còn thẻ; nếu rỗng thì bật lại tất cả loại có thẻ
+active = active.filter(k => CATS[k] && hasCards(k));
+if(!active.length) active = Object.keys(CATS).filter(hasCards);
 
 // Đọc dữ liệu đã lưu trong trình duyệt. Nếu chưa có hoặc lỗi thì dùng giá trị mặc định d.
 function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v ?? d; }catch(e){ return d; } }
@@ -897,6 +996,8 @@ function fill(d){
   el.icon.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#s-' + cat.suit + '"/></svg>';   // chất bài nhỏ ở góc
   el.pip.innerHTML = '<use href="#s-' + cat.suit + '"/>';                                                      // chất bài khổng lồ mờ phía sau
   el.question.textContent = d.text;
+  // Câu càng dài thì chữ càng nhỏ để vừa thẻ (CSS .question[data-len] bên trên)
+  el.question.dataset.len = d.text.length > 200 ? "xl" : d.text.length > 120 ? "l" : d.text.length > 70 ? "m" : "s";
   el.hint.textContent = cat.hint;
   el.who.innerHTML = "";
   if(d.who){
@@ -985,6 +1086,7 @@ function startTimer(e){
 function renderFilters(){
   el.filters.innerHTML = "";
   Object.entries(CATS).forEach(([k,v]) => {       // k = mã loại, v = thông tin loại
+    if(!hasCards(k)) return;                      // loại chưa có thẻ nào thì không hiện nút lọc
     const b = document.createElement("button");
     b.type = "button";
     b.className = "filter" + (active.includes(k) ? "" : " off");   // loại đang tắt thì thêm class "off" (chỉ còn viền xám)
@@ -1149,7 +1251,7 @@ $("cardForm").addEventListener("submit", e => {
   if(active.includes(pickCat)){                              // chèn ngay vào bộ bài đang chơi, ở vị trí ngẫu nhiên
     deck.splice(Math.floor(Math.random() * (deck.length + 1)), 0, card); total++;
   }
-  updateStatus(); renderCustom();
+  updateStatus(); renderCustom(); renderFilters();   // vẽ lại nút lọc phòng khi loại này vừa có thẻ đầu tiên
   vt.text.value = "";
   say("Đã thêm vào bộ bài, loại " + CATS[pickCat].name + ".");
 });
